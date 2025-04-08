@@ -1,0 +1,629 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Seating Arrangement App</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, #8BC6EC 0%, #9599E2 100%);
+            min-height: 100vh;
+            padding: 0;
+            margin: 0;
+        }
+        
+        .glass {
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 16px;
+            box-shadow: 0 8px 32px rgba(31, 38, 135, 0.1);
+        }
+        
+        .student-tile {
+            cursor: move;
+            transition: all 0.3s ease;
+            background: rgba(255, 255, 255, 0.2);
+        }
+        
+        .student-tile:hover {
+            transform: scale(1.05);
+            background: rgba(255, 255, 255, 0.3);
+        }
+        
+        .grid-seat {
+            width: 80px;
+            height: 80px;
+            margin: 5px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+        }
+        
+        .grid-seat:hover {
+            background: rgba(255, 255, 255, 0.25);
+        }
+        
+        .seat-occupied {
+            background: rgba(255, 255, 255, 0.35);
+        }
+        
+        .btn {
+            transition: all 0.3s ease;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+        }
+        
+        .tab-active {
+            border-bottom: 2px solid #fff;
+            font-weight: 600;
+        }
+        
+        .note-bubble {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            width: 15px;
+            height: 15px;
+            border-radius: 50%;
+            background-color: #FF4069;
+        }
+        
+        @media (max-width: 768px) {
+            .grid-seat {
+                width: 60px;
+                height: 60px;
+                font-size: 0.75rem;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .grid-seat {
+                width: 50px;
+                height: 50px;
+                font-size: 0.7rem;
+                margin: 3px;
+            }
+        }
+    </style>
+</head>
+<body class="p-4">
+    <div class="container mx-auto max-w-7xl">
+        <!-- Header -->
+        <div class="glass p-6 mb-6">
+            <h1 class="text-2xl md:text-3xl font-bold text-white mb-4 flex items-center">
+                <i class="bi bi-grid-3x3-gap mr-2"></i> Seating Arrangement
+            </h1>
+            
+            <!-- Tabs -->
+            <div class="flex border-b border-white border-opacity-30 mb-4">
+                <button class="tab-active px-4 py-2 text-white mr-4" id="configTab">Classroom</button>
+                <button class="px-4 py-2 text-white mr-4 opacity-80" id="studentsTab">Students</button>
+                <button class="px-4 py-2 text-white mr-4 opacity-80" id="rulesTab">Rules</button>
+                <button class="px-4 py-2 text-white opacity-80" id="displayTab">Display</button>
+            </div>
+            
+            <!-- Action Buttons -->
+            <div class="flex flex-wrap gap-4">
+                <button id="uploadBtn" class="btn glass px-4 py-2 rounded-lg text-white hover:bg-opacity-30">
+                    <i class="bi bi-upload mr-1"></i> Upload Class List
+                </button>
+                <button id="configBtn" class="btn glass px-4 py-2 rounded-lg text-white hover:bg-opacity-30">
+                    <i class="bi bi-grid-3x3 mr-1"></i> Room Layout
+                </button>
+                <button id="rulesBtn" class="btn glass px-4 py-2 rounded-lg text-white hover:bg-opacity-30">
+                    <i class="bi bi-gear mr-1"></i> Configure Rules
+                </button>
+                <button id="generateBtn" class="btn glass px-4 py-2 rounded-lg text-white hover:bg-opacity-30">
+                    <i class="bi bi-magic mr-1"></i> Auto-Generate
+                </button>
+                <button id="saveBtn" class="btn glass px-4 py-2 rounded-lg text-white hover:bg-opacity-30">
+                    <i class="bi bi-save mr-1"></i> Save Chart
+                </button>
+            </div>
+        </div>
+        
+        <!-- Main Content Area -->
+        <div class="flex flex-col md:flex-row gap-6">
+            <!-- Sidebar - Student List or Rules -->
+            <div class="glass p-4 md:w-1/4">
+                <div id="studentListContainer">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-white font-medium">Students</h2>
+                        <div>
+                            <button class="text-white opacity-70 hover:opacity-100" id="addStudentBtn">
+                                <i class="bi bi-plus-circle"></i>
+                            </button>
+                            <button class="text-white opacity-70 hover:opacity-100 ml-2" id="importBtn">
+                                <i class="bi bi-file-earmark-arrow-down"></i>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <select id="classSelector" class="w-full glass text-white p-2 rounded-lg bg-transparent">
+                            <option value="class1" class="text-gray-800">Period 1 - English</option>
+                            <option value="class2" class="text-gray-800">Period 2 - Science</option>
+                            <option value="class3" class="text-gray-800">Period 3 - Math</option>
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <input type="text" placeholder="Search students..." class="w-full glass text-white p-2 rounded-lg bg-transparent placeholder-white placeholder-opacity-70">
+                    </div>
+                    
+                    <div id="studentList" class="space-y-2 max-h-96 overflow-y-auto pr-1">
+                        <!-- Student tiles will be generated here by JS -->
+                    </div>
+                </div>
+                
+                <div id="rulesListContainer" class="hidden">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-white font-medium">Seating Rules</h2>
+                        <button class="text-white opacity-70 hover:opacity-100" id="addRuleBtn">
+                            <i class="bi bi-plus-circle"></i>
+                        </button>
+                    </div>
+                    
+                    <div id="rulesList" class="space-y-2">
+                        <div class="glass p-3 rounded-lg text-white text-sm">
+                            <div class="flex justify-between items-center">
+                                <span>Amy must sit in front row</span>
+                                <i class="bi bi-three-dots-vertical cursor-pointer"></i>
+                            </div>
+                        </div>
+                        <div class="glass p-3 rounded-lg text-white text-sm">
+                            <div class="flex justify-between items-center">
+                                <span>James can't sit near Kevin</span>
+                                <i class="bi bi-three-dots-vertical cursor-pointer"></i>
+                            </div>
+                        </div>
+                        <div class="glass p-3 rounded-lg text-white text-sm">
+                            <div class="flex justify-between items-center">
+                                <span>Lisa must sit near window</span>
+                                <i class="bi bi-three-dots-vertical cursor-pointer"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Main Content - Seating Grid -->
+            <div class="glass p-4 md:w-3/4">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-white font-medium">Room 211 - Period 1</h2>
+                    <div class="flex gap-2">
+                        <button class="text-white opacity-70 hover:opacity-100" title="Change layout">
+                            <i class="bi bi-grid-3x3"></i>
+                        </button>
+                        <button class="text-white opacity-70 hover:opacity-100" title="Clear all seats">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                        <div class="relative">
+                            <button class="text-white opacity-70 hover:opacity-100" title="View saved charts">
+                                <i class="bi bi-folder"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mb-3 flex justify-between items-center">
+                    <div class="text-white text-sm bg-white bg-opacity-20 px-3 py-1 rounded-full">
+                        Teacher's Desk
+                    </div>
+                    <div class="flex text-white gap-3">
+                        <span class="text-sm flex items-center">
+                            <i class="bi bi-circle-fill text-green-400 mr-1 text-xs"></i> Filled
+                        </span>
+                        <span class="text-sm flex items-center">
+                            <i class="bi bi-circle text-white mr-1 text-xs"></i> Empty
+                        </span>
+                    </div>
+                </div>
+                
+                <div id="seatingGrid" class="flex flex-wrap justify-center">
+                    <!-- Seats will be generated here by JS -->
+                </div>
+                
+                <div class="mt-4 text-white text-center text-opacity-70 text-sm">
+                    <p>Drag and drop students onto seats to assign them</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Modals -->
+        <div id="configModal" class="fixed inset-0 bg-black bg-opacity-50 hidden justify-center items-center z-50">
+            <div class="glass p-6 rounded-xl w-11/12 max-w-lg">
+                <h3 class="text-white text-xl font-medium mb-4">Classroom Configuration</h3>
+                
+                <div class="mb-4">
+                    <label class="block text-white mb-2">Layout Type</label>
+                    <select class="w-full glass text-white p-2 rounded-lg bg-transparent">
+                        <option value="grid" class="text-gray-800">Grid</option>
+                        <option value="circle" class="text-gray-800">Circle</option>
+                        <option value="groups" class="text-gray-800">Groups/Clusters</option>
+                        <option value="auditorium" class="text-gray-800">Auditorium</option>
+                    </select>
+                </div>
+                
+                <div class="flex gap-4 mb-4">
+                    <div class="w-1/2">
+                        <label class="block text-white mb-2">Rows</label>
+                        <input type="number" min="1" max="10" value="5" class="w-full glass text-white p-2 rounded-lg bg-transparent">
+                    </div>
+                    <div class="w-1/2">
+                        <label class="block text-white mb-2">Columns</label>
+                        <input type="number" min="1" max="10" value="6" class="w-full glass text-white p-2 rounded-lg bg-transparent">
+                    </div>
+                </div>
+                
+                <div class="flex justify-end gap-2 mt-6">
+                    <button class="btn glass px-4 py-2 rounded-lg text-white" id="closeConfigModal">Cancel</button>
+                    <button class="btn glass px-4 py-2 rounded-lg text-white bg-white bg-opacity-20">Apply</button>
+                </div>
+            </div>
+        </div>
+        
+        <div id="ruleModal" class="fixed inset-0 bg-black bg-opacity-50 hidden justify-center items-center z-50">
+            <div class="glass p-6 rounded-xl w-11/12 max-w-lg">
+                <h3 class="text-white text-xl font-medium mb-4">Add New Rule</h3>
+                
+                <div class="mb-4">
+                    <label class="block text-white mb-2">Rule Type</label>
+                    <select class="w-full glass text-white p-2 rounded-lg bg-transparent" id="ruleTypeSelect">
+                        <option value="mustSit" class="text-gray-800">Must sit in specific location</option>
+                        <option value="cantSit" class="text-gray-800">Can't sit in specific location</option>
+                        <option value="near" class="text-gray-800">Must sit near student</option>
+                        <option value="away" class="text-gray-800">Must sit away from student</option>
+                    </select>
+                </div>
+                
+                <div class="mb-4">
+                    <label class="block text-white mb-2">Select Student</label>
+                    <select class="w-full glass text-white p-2 rounded-lg bg-transparent">
+                        <option value="" disabled selected class="text-gray-800">Choose a student</option>
+                        <option value="1" class="text-gray-800">John D.</option>
+                        <option value="2" class="text-gray-800">Sarah M.</option>
+                        <option value="3" class="text-gray-800">Mike R.</option>
+                    </select>
+                </div>
+                
+                <div class="mb-4" id="locationField">
+                    <label class="block text-white mb-2">Location</label>
+                    <select class="w-full glass text-white p-2 rounded-lg bg-transparent">
+                        <option value="front" class="text-gray-800">Front row</option>
+                        <option value="back" class="text-gray-800">Back row</option>
+                        <option value="window" class="text-gray-800">Near window</option>
+                        <option value="door" class="text-gray-800">Near door</option>
+                    </select>
+                </div>
+                
+                <div class="mb-4 hidden" id="studentField">
+                    <label class="block text-white mb-2">Related Student</label>
+                    <select class="w-full glass text-white p-2 rounded-lg bg-transparent">
+                        <option value="" disabled selected class="text-gray-800">Choose another student</option>
+                        <option value="1" class="text-gray-800">John D.</option>
+                        <option value="2" class="text-gray-800">Sarah M.</option>
+                        <option value="3" class="text-gray-800">Mike R.</option>
+                    </select>
+                </div>
+                
+                <div class="flex justify-end gap-2 mt-6">
+                    <button class="btn glass px-4 py-2 rounded-lg text-white" id="closeRuleModal">Cancel</button>
+                    <button class="btn glass px-4 py-2 rounded-lg text-white bg-white bg-opacity-20">Add Rule</button>
+                </div>
+            </div>
+        </div>
+        
+        <div id="studentModal" class="fixed inset-0 bg-black bg-opacity-50 hidden justify-center items-center z-50">
+            <div class="glass p-6 rounded-xl w-11/12 max-w-lg">
+                <h3 class="text-white text-xl font-medium mb-4">Student Details</h3>
+                
+                <div class="mb-4">
+                    <label class="block text-white mb-2">Name</label>
+                    <input type="text" class="w-full glass text-white p-2 rounded-lg bg-transparent" placeholder="Full name">
+                </div>
+                
+                <div class="mb-4">
+                    <label class="block text-white mb-2">Notes</label>
+                    <textarea class="w-full glass text-white p-2 rounded-lg bg-transparent" rows="3" placeholder="Any special considerations"></textarea>
+                </div>
+                
+                <div class="mb-4">
+                    <label class="block text-white mb-2">Behavior Rating (1-5)</label>
+                    <div class="flex gap-2">
+                        <button class="btn w-10 h-10 glass text-white rounded-full flex items-center justify-center">1</button>
+                        <button class="btn w-10 h-10 glass text-white rounded-full flex items-center justify-center">2</button>
+                        <button class="btn w-10 h-10 glass text-white bg-white bg-opacity-25 rounded-full flex items-center justify-center">3</button>
+                        <button class="btn w-10 h-10 glass text-white rounded-full flex items-center justify-center">4</button>
+                        <button class="btn w-10 h-10 glass text-white rounded-full flex items-center justify-center">5</button>
+                    </div>
+                </div>
+                
+                <div class="flex justify-end gap-2 mt-6">
+                    <button class="btn glass px-4 py-2 rounded-lg text-white" id="closeStudentModal">Cancel</button>
+                    <button class="btn glass px-4 py-2 rounded-lg text-white bg-white bg-opacity-20">Save</button>
+                </div>
+            </div>
+        </div>
+        
+        <div id="uploadModal" class="fixed inset-0 bg-black bg-opacity-50 hidden justify-center items-center z-50">
+            <div class="glass p-6 rounded-xl w-11/12 max-w-lg">
+                <h3 class="text-white text-xl font-medium mb-4">Upload Class List</h3>
+                
+                <div class="mb-4">
+                    <label class="block text-white mb-2">Import Method</label>
+                    <div class="flex flex-col space-y-2">
+                        <button class="btn glass px-4 py-3 rounded-lg text-white text-left">
+                            <i class="bi bi-file-earmark-spreadsheet mr-2"></i> Upload Excel/CSV File
+                        </button>
+                        <button class="btn glass px-4 py-3 rounded-lg text-white text-left">
+                            <i class="bi bi-camera mr-2"></i> Take Photo of Class List
+                        </button>
+                        <button class="btn glass px-4 py-3 rounded-lg text-white text-left">
+                            <i class="bi bi-link-45deg mr-2"></i> Paste Shared Document Link
+                        </button>
+                        <button class="btn glass px-4 py-3 rounded-lg text-white text-left">
+                            <i class="bi bi-pencil-square mr-2"></i> Create Manually
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="flex justify-end gap-2 mt-6">
+                    <button class="btn glass px-4 py-2 rounded-lg text-white" id="closeUploadModal">Cancel</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Sample student data
+        const students = [
+            { id: 1, name: "John D.", notes: "", behavior: 3 },
+            { id: 2, name: "Sarah M.", notes: "Visual impairment - front seat preferred", behavior: 1 },
+            { id: 3, name: "Mike R.", notes: "", behavior: 4 },
+            { id: 4, name: "Emma L.", notes: "", behavior: 2 },
+            { id: 5, name: "Alex P.", notes: "Keep away from James", behavior: 4 },
+            { id: 6, name: "Lisa T.", notes: "", behavior: 2 },
+            { id: 7, name: "Kevin B.", notes: "", behavior: 5 },
+            { id: 8, name: "Amy S.", notes: "IEP - front row accommodation", behavior: 2 },
+            { id: 9, name: "James W.", notes: "Keep away from Alex", behavior: 3 },
+            { id: 10, name: "Olivia R.", notes: "", behavior: 1 },
+            { id: 11, name: "David K.", notes: "", behavior: 3 },
+            { id: 12, name: "Emily J.", notes: "", behavior: 1 }
+        ];
+        
+        // DOM elements
+        const studentList = document.getElementById('studentList');
+        const seatingGrid = document.getElementById('seatingGrid');
+        const configModal = document.getElementById('configModal');
+        const ruleModal = document.getElementById('ruleModal');
+        const studentModal = document.getElementById('studentModal');
+        const uploadModal = document.getElementById('uploadModal');
+        
+        // Modal toggle functions
+        document.getElementById('configBtn').addEventListener('click', () => {
+            configModal.style.display = 'flex';
+        });
+        
+        document.getElementById('closeConfigModal').addEventListener('click', () => {
+            configModal.style.display = 'none';
+        });
+        
+        document.getElementById('rulesBtn').addEventListener('click', () => {
+            ruleModal.style.display = 'flex';
+        });
+        
+        document.getElementById('closeRuleModal').addEventListener('click', () => {
+            ruleModal.style.display = 'none';
+        });
+        
+        document.getElementById('addStudentBtn').addEventListener('click', () => {
+            studentModal.style.display = 'flex';
+        });
+        
+        document.getElementById('closeStudentModal').addEventListener('click', () => {
+            studentModal.style.display = 'none';
+        });
+        
+        document.getElementById('uploadBtn').addEventListener('click', () => {
+            uploadModal.style.display = 'flex';
+        });
+        
+        document.getElementById('closeUploadModal').addEventListener('click', () => {
+            uploadModal.style.display = 'none';
+        });
+        
+        // Tab switching
+        document.getElementById('rulesTab').addEventListener('click', () => {
+            document.getElementById('studentListContainer').classList.add('hidden');
+            document.getElementById('rulesListContainer').classList.remove('hidden');
+            
+            // Update tab styles
+            document.querySelectorAll('.tab-active').forEach(el => el.classList.remove('tab-active'));
+            document.getElementById('rulesTab').classList.add('tab-active');
+        });
+        
+        document.getElementById('studentsTab').addEventListener('click', () => {
+            document.getElementById('studentListContainer').classList.remove('hidden');
+            document.getElementById('rulesListContainer').classList.add('hidden');
+            
+            // Update tab styles
+            document.querySelectorAll('.tab-active').forEach(el => el.classList.remove('tab-active'));
+            document.getElementById('studentsTab').classList.add('tab-active');
+        });
+        
+        document.getElementById('configTab').addEventListener('click', () => {
+            // Update tab styles
+            document.querySelectorAll('.tab-active').forEach(el => el.classList.remove('tab-active'));
+            document.getElementById('configTab').classList.add('tab-active');
+        });
+        
+        // Rule type change updates fields
+        document.getElementById('ruleTypeSelect').addEventListener('change', (e) => {
+            const value = e.target.value;
+            if (value === 'mustSit' || value === 'cantSit') {
+                document.getElementById('locationField').classList.remove('hidden');
+                document.getElementById('studentField').classList.add('hidden');
+            } else {
+                document.getElementById('locationField').classList.add('hidden');
+                document.getElementById('studentField').classList.remove('hidden');
+            }
+        });
+
+        // Generate student tiles
+        function generateStudentList() {
+            studentList.innerHTML = '';
+            students.forEach(student => {
+                const tile = document.createElement('div');
+                tile.className = 'student-tile glass p-2 text-white rounded-lg relative mb-2';
+                tile.draggable = true;
+                tile.setAttribute('data-id', student.id);
+                
+                // Add note indicator if notes exist
+                const noteIndicator = student.notes ? 
+                    `<div class="note-bubble" title="${student.notes}"></div>` : '';
+                
+                // Add behavior rating indicator
+                const behaviorClass = student.behavior > 3 ? 'text-red-300' : (student.behavior < 3 ? 'text-green-300' : '');
+                
+                tile.innerHTML = `
+                    ${noteIndicator}
+                    <div class="flex justify-between items-center">
+                        <span>${student.name}</span>
+                        <div class="flex items-center">
+                            <span class="text-xs mr-2 ${behaviorClass}">${student.behavior}</span>
+                            <i class="bi bi-three-dots-vertical cursor-pointer"></i>
+                        </div>
+                    </div>
+                `;
+                
+                // Set up drag events
+                tile.addEventListener('dragstart', handleDragStart);
+                studentList.appendChild(tile);
+            });
+        }
+
+        // Generate seating grid
+        function generateSeatingGrid() {
+            seatingGrid.innerHTML = '';
+            const rows = 4;
+            const cols = 6;
+            
+            for(let i = 0; i < rows; i++) {
+                for(let j = 0; j < cols; j++) {
+                    const seat = document.createElement('div');
+                    seat.className = 'grid-seat glass';
+                    seat.setAttribute('data-row', i);
+                    seat.setAttribute('data-col', j);
+                    
+                    // Set up drop events
+                    seat.addEventListener('dragover', handleDragOver);
+                    seat.addEventListener('drop', handleDrop);
+                    seat.addEventListener('click', handleSeatClick);
+                    
+                    seatingGrid.appendChild(seat);
+                }
+            }
+        }
+
+        // Handle student drag start
+        function handleDragStart(e) {
+            e.dataTransfer.setData('text/plain', e.target.getAttribute('data-id'));
+        }
+
+        // Handle dragging over a seat
+        function handleDragOver(e) {
+            e.preventDefault();
+            e.target.classList.add('bg-white');
+            e.target.classList.add('bg-opacity-20');
+        }
+
+        // Handle dropping on a seat
+        function handleDrop(e) {
+            e.preventDefault();
+            e.target.classList.remove('bg-white');
+            e.target.classList.remove('bg-opacity-20');
+            
+            const studentId = e.dataTransfer.getData('text/plain');
+            const student = students.find(s => s.id == studentId);
+            
+            if(student && e.target.classList.contains('grid-seat')) {
+                e.target.innerHTML = `
+                    <div class="text-white text-sm text-center">
+                        ${student.name}
+                    </div>
+                `;
+                e.target.classList.add('seat-occupied');
+                e.target.setAttribute('data-student-id', student.id);
+            }
+        }
+
+        // Handle clicking on a seat
+        function handleSeatClick(e) {
+            const studentId = e.target.getAttribute('data-student-id');
+            if (studentId) {
+                // Show student details or context menu
+                console.log(`Clicked on seat with student ID: ${studentId}`);
+                // Here you could show a context menu or student details
+            }
+        }
+
+        // Auto-generate seating arrangement
+        document.getElementById('generateBtn').addEventListener('click', () => {
+            // For demo purposes, let's just randomize student placement
+            const seats = document.querySelectorAll('.grid-seat');
+            
+            // First, clear all seats
+            seats.forEach(seat => {
+                seat.innerHTML = '';
+                seat.classList.remove('seat-occupied');
+                seat.removeAttribute('data-student-id');
+            });
+            
+            // Then randomly assign students
+            const shuffledStudents = [...students].sort(() => 0.5 - Math.random());
+            const availableSeats = Array.from(seats);
+            
+            shuffledStudents.forEach((student, index) => {
+                if (index < availableSeats.length) {
+                    availableSeats[index].innerHTML = `
+                        <div class="text-white text-sm text-center">
+                            ${student.name}
+                        </div>
+                    `;
+                    availableSeats[index].classList.add('seat-occupied');
+                    availableSeats[index].setAttribute('data-student-id', student.id);
+                }
+            });
+            
+            // Show success message
+            alert('Seating arrangement generated successfully!');
+        });
+
+        // Initialize the app
+        document.addEventListener('DOMContentLoaded', () => {
+            generateStudentList();
+            generateSeatingGrid();
+            
+            // Setup window click to close modals when clicking outside
+            window.addEventListener('click', (e) => {
+                if (e.target === configModal) configModal.style.display = 'none';
+                if (e.target === ruleModal) ruleModal.style.display = 'none';
+                if (e.target === studentModal) studentModal.style.display = 'none';
+                if (e.target === uploadModal) uploadModal.style.display = 'none';
+            });
+        });
+    </script>
+<script>document.body.addEventListener('wheel', e => { if (!e.ctrlKey) return; e.preventDefault(); return }, { passive: false })</script>
+	</body>
+</html>
